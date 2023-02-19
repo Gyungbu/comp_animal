@@ -13,7 +13,7 @@ if input_data['type'] == 'dog':
 
   # df_multiplier_dog : Multiplier information corresponding to dog group
   # df_expected_body_weight_dog : Expected body weight information corresponding to dog breed
-  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companian_animal.xlsx"
+  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
   df_multiplier_dog = pd.read_excel(path_db, sheet_name = "multiplier_dog")
   df_expected_body_weight_dog = pd.read_excel(path_db, sheet_name = "expected_body_weight_dog")
   
@@ -31,7 +31,7 @@ if input_data['type'] == 'dog':
   except:
     print("Please check the name of the dog group or dog breed!")
   
-## Calculate the Daily Metabolizable Energy Requirements of Dogs
+## Calculate the Daily Metabolisable Energy Requirements of Dogs
   try:
     # Puppies after weaning
     if input_data['week'] < 8:
@@ -110,7 +110,7 @@ if input_data['type'] == 'cat':
 
   # df_multiplier_cat : Multiplier information corresponding to cat group
   # df_expected_body_weight_cat : Expected body weight information corresponding to cat breed
-  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companian_animal.xlsx"
+  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
   df_multiplier_cat = pd.read_excel(path_db, sheet_name = "multiplier_cat")
   df_expected_body_weight_cat = pd.read_excel(path_db, sheet_name = "expected_body_weight_cat")
   
@@ -128,7 +128,7 @@ if input_data['type'] == 'cat':
   except:
     print("Please check the name of the cat group or cat breed!")
 
-## Calculate the Daily Metabolizable Energy Requirements of Cats
+## Calculate the Daily Metabolisable Energy Requirements of Cats
   try:
     # Kittens after weaning
     if input_data['week'] <= 52:
@@ -187,3 +187,79 @@ if input_data['type'] == 'cat':
     print("Please check the input values (ex, week, sex, female_status, number_of_kittens etc.)!")      
 
 print("Metabolisable Energy:",  ME, "kcal")
+print("건물섭취량:",  ME/4, "g")
+
+## Calculate the Recommended nutrients for Dogs 
+
+if input_data['type'] == 'dog':
+  # df_recom_nutrient_dog : Recommended nutrient levels per 1000kcal of ME for dog
+  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
+  df_recom_nutrient_dog = pd.read_excel(path_db, sheet_name = "recom_nutrient_dog")    
+  
+  df_recom_nutrient_dog['min_nutrient'] = '-'
+   
+  for idx, row in df_recom_nutrient_dog.iterrows():
+    if input_data['week'] < 14:
+      if row['early_growth'] != '-':
+        df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = float(row['early_growth']) * ME / 1000  
+      else:
+        df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = '-'
+
+    elif input_data['week'] <= 52:
+      if row['late_growth'] != '-':
+        df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = float(row['late_growth']) * ME / 1000  
+      else:
+        df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = '-'
+
+    elif input_data['sex'] == 'female':
+      if (input_data['female_status'] == 'gestation') | (input_data['female_status'] == 'lactation'):
+        if row['reproduction'] != '-':
+          df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = float(row['reproduction']) * ME / 1000  
+        else:
+          df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = '-'
+        
+    else:
+      if row['adult'] != '-':
+        df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = float(row['adult']) * ME / 1000  
+      else:
+        df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = '-'
+  
+  df_recom_nutrient_dog = df_recom_nutrient_dog[['nutrient','unit', 'min_nutrient']]
+  print(df_recom_nutrient_dog)
+
+## Calculate the Recommended nutrients for Cats 
+
+if input_data['type'] == 'cat':
+  # df_recom_nutrient_cat : Recommended nutrient levels per 1000kcal of ME for cat
+  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
+  df_recom_nutrient_cat = pd.read_excel(path_db, sheet_name = "recom_nutrient_cat")    
+  
+  df_recom_nutrient_cat['min_nutrient'] = '-'
+   
+  for idx, row in df_recom_nutrient_cat.iterrows():
+    if input_data['week'] <= 52:
+      if row['growth'] != '-':
+        df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = float(row['growth']) * ME / 1000  
+      else:
+        df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = '-'
+
+    elif input_data['sex'] == 'female':
+      if (input_data['female_status'] == 'gestation') | (input_data['female_status'] == 'lactation'):
+        if row['reproduction'] != '-':
+          df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = float(row['reproduction']) * ME / 1000  
+        else:
+          df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = '-'
+        
+    else:
+      if row['adult'] != '-':
+        df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = float(row['adult']) * ME / 1000  
+      else:
+        df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = '-'
+
+  df_recom_nutrient_cat = df_recom_nutrient_cat[['nutrient','unit', 'min_nutrient']]
+  print(df_recom_nutrient_cat)
+
+
+
+
+

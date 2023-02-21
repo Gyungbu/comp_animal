@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-
+     
 input_data = {'type' : 'cat', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 'cat_breed' : '노르웨이숲', 'cat_group' : 'Active cats', 'weeks_after_pregnant' : 4, 'weeks_of_lactation' : 4, 'number_of_puppies' : 4, 'number_of_kittens' : 4}
 
 dict_week_lactation_dog = {1:0.75, 2:0.95, 3:1.1, 4:1.2}
@@ -13,7 +13,7 @@ if input_data['type'] == 'dog':
 
   # df_multiplier_dog : Multiplier information corresponding to dog group
   # df_expected_body_weight_dog : Expected body weight information corresponding to dog breed
-  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
+  path_db = os.path.abspath('') + "/input/DB_companion_animal.xlsx"
   df_multiplier_dog = pd.read_excel(path_db, sheet_name = "multiplier_dog")
   df_expected_body_weight_dog = pd.read_excel(path_db, sheet_name = "expected_body_weight_dog")
   
@@ -110,7 +110,7 @@ if input_data['type'] == 'cat':
 
   # df_multiplier_cat : Multiplier information corresponding to cat group
   # df_expected_body_weight_cat : Expected body weight information corresponding to cat breed
-  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
+  path_db = os.path.abspath('') + "/input/DB_companion_animal.xlsx"
   df_multiplier_cat = pd.read_excel(path_db, sheet_name = "multiplier_cat")
   df_expected_body_weight_cat = pd.read_excel(path_db, sheet_name = "expected_body_weight_cat")
   
@@ -193,7 +193,7 @@ print("건물섭취량:",  ME/4, "g")
 
 if input_data['type'] == 'dog':
   # df_recom_nutrient_dog : Recommended nutrient levels per 1000kcal of ME for dog
-  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
+  path_db = os.path.abspath('') + "/input/DB_companion_animal.xlsx"
   df_recom_nutrient_dog = pd.read_excel(path_db, sheet_name = "recom_nutrient_dog")    
   
   df_recom_nutrient_dog['min_nutrient'] = '-'
@@ -231,7 +231,7 @@ if input_data['type'] == 'dog':
 
 if input_data['type'] == 'cat':
   # df_recom_nutrient_cat : Recommended nutrient levels per 1000kcal of ME for cat
-  path_db = os.path.dirname(os.path.abspath(__file__)) + "/input/DB_companion_animal.xlsx"
+  path_db = os.path.abspath('') + "/input/DB_companion_animal.xlsx"
   df_recom_nutrient_cat = pd.read_excel(path_db, sheet_name = "recom_nutrient_cat")    
   
   df_recom_nutrient_cat['min_nutrient'] = '-'

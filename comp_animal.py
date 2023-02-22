@@ -1,8 +1,13 @@
 import os
 import pandas as pd
 import numpy as np
-     
-input_data = {'type' : 'cat', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 'cat_breed' : '노르웨이숲', 'cat_group' : 'Active cats', 'weeks_after_pregnant' : 4, 'weeks_of_lactation' : 4, 'number_of_puppies' : 4, 'number_of_kittens' : 4}
+import openpyxl
+import scipy
+
+input_data = {'type' : 'cat', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
+              'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 
+              'cat_breed' : '노르웨이숲', 'cat_group' : 'Active cats', 'weeks_after_pregnant' : 4, 
+              'weeks_of_lactation' : 4, 'number_of_puppies' : 4, 'number_of_kittens' : 4}
 
 dict_week_lactation_dog = {1:0.75, 2:0.95, 3:1.1, 4:1.2}
 dict_week_lactation_cat = {1:0.9, 2:0.9, 3:1.2, 4:1.2, 5:1.1, 6:1.0, 7:0.8}
@@ -225,7 +230,9 @@ if input_data['type'] == 'dog':
         df_recom_nutrient_dog.loc[idx, 'min_nutrient'] = '-'
   
   df_recom_nutrient_dog = df_recom_nutrient_dog[['nutrient','unit', 'min_nutrient']]
-  print(df_recom_nutrient_dog)
+  df_recom_nutrient_output =  df_recom_nutrient_dog
+  df_recom_nutrient_output.loc[-1] = ['Metabolisable Energy', 'kcal', 'ME']
+  print(df_recom_nutrient_output)
 
 ## Calculate the Recommended nutrients for Cats 
 
@@ -257,9 +264,81 @@ if input_data['type'] == 'cat':
         df_recom_nutrient_cat.loc[idx, 'min_nutrient'] = '-'
 
   df_recom_nutrient_cat = df_recom_nutrient_cat[['nutrient','unit', 'min_nutrient']]
-  print(df_recom_nutrient_cat)
+  df_recom_nutrient_output =  df_recom_nutrient_cat 
+  df_recom_nutrient_output.loc[-1] = ['Metabolisable Energy', 'kcal', ME]
+  print(df_recom_nutrient_output)
 
 
 
 
 
+# df_raw_material : Raw material - Nutrient information
+path_db_raw_material = os.path.abspath('') + "/input/DB_raw_materials.xlsx"
+sheet = openpyxl.load_workbook(path_db_raw_material).sheetnames
+
+df_raw_material = pd.DataFrame([])
+for i in sheet:
+    df = pd.read_excel(path_db_raw_material, sheet_name=i)
+    df_raw_material = pd.concat([df_raw_material, df])
+
+# Calculate the Gross Energy of the Raw materials (Missing value to Zero)
+
+def isNumber(s):
+  try:
+    float(s)
+    return True
+  except ValueError:
+    return False
+
+
+dict_GE = {'단백질\n(%)':5.7,'지방\n(%)':9.4, '탄수화물\n(%)':4.1, '조섬유\n(%)':4.1}
+
+df_raw_material['gross_energy\n(kcal)'] = 0
+df_raw_material = df_raw_material.replace(np.nan, 0)
+
+for idx, row in df_raw_material.iterrows():
+    for str_nutrient in dict_GE:
+        if isNumber(row[str_nutrient]):
+            df_raw_material.loc[idx, 'gross_energy\n(kcal)'] += 0.01 * row[str_nutrient] * dict_GE[str_nutrient] * 1000
+
+li_recom_nut_kor = ['단백질\n(%)', '트립토판\n(%)', '칼슘\n(%)', '인\n(%)', '지방\n(%)','리놀레산\n(%)','나트륨\n(%)','칼륨\n(%)','마그네슘\n(%)','gross_energy\n(kcal)']
+
+np_coeff = df_raw_material[li_recom_nut_kor].transpose().values
+
+np_coeff[:-1,:] /= 100
+np_coeff *= -1
+A_ub = np_coeff.tolist()
+
+li_recom_nut_eng = ['Protein', 'Tryptophan', 'Calcium', 'Phosphorus', 'Fat', 
+                    'Linoleic acid (ω-6)', 'Sodium', 'Potassium', 'Magnesium',
+                    'Metabolisable Energy']
+
+b_ub = []
+
+for nutrient in li_recom_nut_eng:
+    if nutrient != 'Metabolisable Energy':
+        condition = (df_recom_nutrient_output.nutrient == nutrient)
+        min_nutrient = df_recom_nutrient_output[condition]['min_nutrient'].values[0]
+        b_ub.append(min_nutrient*-0.001)  
+    else:
+        condition = (df_recom_nutrient_output.nutrient == nutrient)
+        min_nutrient = df_recom_nutrient_output[condition]['min_nutrient'].values[0]
+        b_ub.append(min_nutrient*-1)
+
+c = df_raw_material['원료가격\n(원/kg)'].values
+c = c.tolist()
+A_eq = np.ones((1,np_coeff.shape[1])).tolist()
+b_eq = [100]
+
+bounds = [(0, None)]*np_coeff.shape[1]
+
+result = scipy.optimize.linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+
+
+if result.success:
+    for idx in range(len(result.x)):
+        if result.x[idx] != 0:
+            print(df_raw_material.iloc[idx]['원료'], result.x[idx] )
+
+else:
+    print("No solution")

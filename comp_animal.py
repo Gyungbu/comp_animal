@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import openpyxl
 import scipy
-import sys
 
 # Functions
 
@@ -24,20 +23,16 @@ input_data = {'type' : 'bird', 'sex' : 'female', 'female_status' : 'lactation', 
 dict_week_lactation_dog = {1:0.75, 2:0.95, 3:1.1, 4:1.2}
 dict_week_lactation_cat = {1:0.9, 2:0.9, 3:1.2, 4:1.2, 5:1.1, 6:1.0, 7:0.8}
 
-'''
-if input_data['type'] not in ['dog', 'cat']:
-    print('Animal type must be either "dog" or "cat"!')
-    sys.exit()
-'''
 # Check the input data - dog, cat
 while True:
     if input_data['type'] not in ['dog', 'cat']:
-        #input_data = input_data.append({'type': input('Enter animal type: ')})
         input_data['type'] = input('Enter animal type: ')
         print('Animal type must be either "dog" or "cat"')
+        
         continue
     
     # If we get here, the animal type is valid, so we can exit the loop
+    print("\n<input_data>\n")
     print(input_data)
     break
     
@@ -139,7 +134,7 @@ if input_data['type'] == 'dog':
 
 
 # Get Multiplier & Expected body weight values from cat_group & cat_breed information
-if input_data['type'] == 'cat':
+elif input_data['type'] == 'cat':
 
   # df_multiplier_cat : Multiplier information corresponding to cat group
   # df_expected_body_weight_cat : Expected body weight information corresponding to cat breed
@@ -266,7 +261,7 @@ if input_data['type'] == 'dog':
 
 ## Calculate the Recommended nutrients for Cats 
 
-if input_data['type'] == 'cat':
+elif input_data['type'] == 'cat':
   # df_recom_nutrient_cat : Recommended nutrient levels per 1000kcal of ME for cat
   path_db = os.path.abspath('') + "/input/DB_companion_animal.xlsx"
   df_recom_nutrient_cat = pd.read_excel(path_db, sheet_name = "recom_nutrient_cat")    

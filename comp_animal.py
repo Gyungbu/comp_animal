@@ -4,6 +4,13 @@ import numpy as np
 import openpyxl
 import scipy
 
+def isNumber(s):
+  try:
+    float(s)
+    return True
+  except ValueError:
+    return False
+
 input_data = {'type' : 'cat', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
               'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 
               'cat_breed' : '노르웨이숲', 'cat_group' : 'Active cats', 'weeks_after_pregnant' : 4, 
@@ -191,6 +198,7 @@ if input_data['type'] == 'cat':
   except:
     print("Please check the input values (ex, week, sex, female_status, number_of_kittens etc.)!")      
 
+print("\n<1.Result of the Metabolisable Energy>\n")
 print("Metabolisable Energy:",  ME, "kcal")
 print("건물섭취량:",  ME/4, "g")
 
@@ -232,6 +240,7 @@ if input_data['type'] == 'dog':
   df_recom_nutrient_dog = df_recom_nutrient_dog[['nutrient','unit', 'min_nutrient']]
   df_recom_nutrient_output =  df_recom_nutrient_dog
   df_recom_nutrient_output.loc[-1] = ['Metabolisable Energy', 'kcal', 'ME']
+  print("\n<2.Result of the Recommended Nutrients>\n")
   print(df_recom_nutrient_output)
 
 ## Calculate the Recommended nutrients for Cats 
@@ -266,11 +275,10 @@ if input_data['type'] == 'cat':
   df_recom_nutrient_cat = df_recom_nutrient_cat[['nutrient','unit', 'min_nutrient']]
   df_recom_nutrient_output =  df_recom_nutrient_cat 
   df_recom_nutrient_output.loc[-1] = ['Metabolisable Energy', 'kcal', ME]
+  print("\n<2.Result of the Recommended Nutrients>\n")
   print(df_recom_nutrient_output)
 
-
-
-
+### Calculate the pet feeding ratios by using the Linear Programming Method
 
 # df_raw_material : Raw material - Nutrient information
 path_db_raw_material = os.path.abspath('') + "/input/DB_raw_materials.xlsx"
@@ -283,14 +291,6 @@ for i in sheet:
 
 # Calculate the Gross Energy of the Raw materials (Missing value to Zero)
 
-def isNumber(s):
-  try:
-    float(s)
-    return True
-  except ValueError:
-    return False
-
-
 dict_GE = {'단백질\n(%)':5.7,'지방\n(%)':9.4, '탄수화물\n(%)':4.1, '조섬유\n(%)':4.1}
 
 df_raw_material['gross_energy\n(kcal)'] = 0
@@ -301,7 +301,12 @@ for idx, row in df_raw_material.iterrows():
         if isNumber(row[str_nutrient]):
             df_raw_material.loc[idx, 'gross_energy\n(kcal)'] += 0.01 * row[str_nutrient] * dict_GE[str_nutrient] * 1000
 
-li_recom_nut_kor = ['단백질\n(%)', '트립토판\n(%)', '칼슘\n(%)', '인\n(%)', '지방\n(%)','리놀레산\n(%)','나트륨\n(%)','칼륨\n(%)','마그네슘\n(%)','gross_energy\n(kcal)']
+# li_recom_nut_kor : List of the Recommended nutrients in Korean form  
+# li_recom_nut_eng : List of the Recommended nutrients in English form  
+
+li_recom_nut_kor = ['단백질\n(%)', '트립토판\n(%)', '칼슘\n(%)', '인\n(%)', '지방\n(%)',
+                    '리놀레산\n(%)','나트륨\n(%)','칼륨\n(%)','마그네슘\n(%)',
+                    'gross_energy\n(kcal)']
 
 np_coeff = df_raw_material[li_recom_nut_kor].transpose().values
 
@@ -313,27 +318,43 @@ li_recom_nut_eng = ['Protein', 'Tryptophan', 'Calcium', 'Phosphorus', 'Fat',
                     'Linoleic acid (ω-6)', 'Sodium', 'Potassium', 'Magnesium',
                     'Metabolisable Energy']
 
+# Required nutrient requirements unit conversion
+
 b_ub = []
 
 for nutrient in li_recom_nut_eng:
-    if nutrient != 'Metabolisable Energy':
-        condition = (df_recom_nutrient_output.nutrient == nutrient)
-        min_nutrient = df_recom_nutrient_output[condition]['min_nutrient'].values[0]
+    condition = (df_recom_nutrient_output.nutrient == nutrient)
+    min_nutrient = df_recom_nutrient_output[condition]['min_nutrient'].values[0]    
+    unit = df_recom_nutrient_output[condition]['unit'].values[0]    
+
+    if unit == 'g':
         b_ub.append(min_nutrient*-0.001)  
+        
+    elif unit == 'mg':
+        b_ub.append(min_nutrient*-0.000001)  
+        
+    elif unit == 'µg':
+        b_ub.append(min_nutrient*-0.000000001)  
+        
     else:
-        condition = (df_recom_nutrient_output.nutrient == nutrient)
-        min_nutrient = df_recom_nutrient_output[condition]['min_nutrient'].values[0]
         b_ub.append(min_nutrient*-1)
 
-c = df_raw_material['원료가격\n(원/kg)'].values
-c = c.tolist()
+# Optimization - Price of the raw materials        
+c = df_raw_material['원료가격\n(원/kg)'].values.tolist()
+
+# Constraint - Sum of the combined ratio is equal to 100
 A_eq = np.ones((1,np_coeff.shape[1])).tolist()
 b_eq = [100]
 
+# Non-Negativity Constraints
 bounds = [(0, None)]*np_coeff.shape[1]
 
+# Linear Programmin
 result = scipy.optimize.linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
 
+# Show the result of the pet feeding ratios
+
+print("\n<3.Result of the Pet Feeding Ratio>\n")
 
 if result.success:
     for idx in range(len(result.x)):
@@ -342,3 +363,6 @@ if result.success:
 
 else:
     print("No solution")
+
+
+

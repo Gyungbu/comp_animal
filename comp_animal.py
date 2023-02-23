@@ -15,7 +15,7 @@ def isNumber(s):
 
 # Input data - Personal Information of the Companion Animal
 
-input_data = {'type' : 'bird', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
+input_data = {'type' : 'dog', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
               'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 
               'cat_breed' : '노르웨이숲', 'cat_group' : 'Active cats', 'weeks_after_pregnant' : 4, 
               'weeks_of_lactation' : 4, 'number_of_puppies' : 4, 'number_of_kittens' : 4}

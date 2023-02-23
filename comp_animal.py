@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import openpyxl
 import scipy
+import sys
 
 # Functions
 
@@ -15,15 +16,31 @@ def isNumber(s):
 
 # Input data - Personal Information of the Companion Animal
 
-input_data = {'type' : 'cat', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
+input_data = {'type' : 'bird', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
               'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 
               'cat_breed' : '노르웨이숲', 'cat_group' : 'Active cats', 'weeks_after_pregnant' : 4, 
               'weeks_of_lactation' : 4, 'number_of_puppies' : 4, 'number_of_kittens' : 4}
 
 dict_week_lactation_dog = {1:0.75, 2:0.95, 3:1.1, 4:1.2}
 dict_week_lactation_cat = {1:0.9, 2:0.9, 3:1.2, 4:1.2, 5:1.1, 6:1.0, 7:0.8}
-  
 
+'''
+if input_data['type'] not in ['dog', 'cat']:
+    print('Animal type must be either "dog" or "cat"!')
+    sys.exit()
+'''
+# Check the input data - dog, cat
+while True:
+    if input_data['type'] not in ['dog', 'cat']:
+        #input_data = input_data.append({'type': input('Enter animal type: ')})
+        input_data['type'] = input('Enter animal type: ')
+        print('Animal type must be either "dog" or "cat"')
+        continue
+    
+    # If we get here, the animal type is valid, so we can exit the loop
+    print(input_data)
+    break
+    
 # Get Multiplier & Expected body weight values from dog_group & dog_breed information
 if input_data['type'] == 'dog':
 
@@ -243,7 +260,7 @@ if input_data['type'] == 'dog':
   
   df_recom_nutrient_dog = df_recom_nutrient_dog[['nutrient','unit', 'min_nutrient']]
   df_recom_nutrient_output =  df_recom_nutrient_dog
-  df_recom_nutrient_output.loc[-1] = ['Metabolisable Energy', 'kcal', 'ME']
+  df_recom_nutrient_output.loc[-1] = ['Metabolisable Energy', 'kcal', ME]
   print("\n<2.Result of the Recommended Nutrients>\n")
   print(df_recom_nutrient_output)
 

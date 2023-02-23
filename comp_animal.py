@@ -31,7 +31,7 @@ def is_valid_animal_type(animal_type):
 
 # Input data - Personal Information of the Companion Animal
 
-input_data = {'type' : 'bird', 
+input_data = {'type' : 'dog', 
               'sex' : 'female', 
               'female_status' : 'lactation', 
               'week' : 100, 
@@ -49,7 +49,7 @@ input_data = {'type' : 'bird',
 dict_week_lactation_dog = {1:0.75, 2:0.95, 3:1.1, 4:1.2}
 dict_week_lactation_cat = {1:0.9, 2:0.9, 3:1.2, 4:1.2, 5:1.1, 6:1.0, 7:0.8}
 
-# Check the input data - dog, cat
+# Check the type of the input data - dog, cat
 while True:
     if not is_valid_animal_type(input_data['type']):
         input_data['type'] = input('Enter animal type: ')
@@ -334,9 +334,17 @@ for idx, row in df_raw_material.iterrows():
 # li_recom_nut_kor : List of the Recommended nutrients in Korean form  
 # li_recom_nut_eng : List of the Recommended nutrients in English form  
 
-li_recom_nut_kor = ['단백질\n(%)', '트립토판\n(%)', '칼슘\n(%)', '인\n(%)', '지방\n(%)',
-                    '리놀레산\n(%)','나트륨\n(%)','칼륨\n(%)','마그네슘\n(%)',
-                    'gross_energy\n(kcal)']
+li_recom_nut_kor = ['단백질\n(%)', 
+                    '트립토판\n(%)', 
+                    '칼슘\n(%)', 
+                    '인\n(%)', 
+                    '지방\n(%)',
+                    '리놀레산\n(%)',
+                    '나트륨\n(%)',
+                    '칼륨\n(%)',
+                    '마그네슘\n(%)',
+                    'gross_energy\n(kcal)'
+                   ]
 
 np_coeff = df_raw_material[li_recom_nut_kor].transpose().values
 
@@ -344,9 +352,17 @@ np_coeff[:-1,:] /= 100
 np_coeff *= -1
 A_ub = np_coeff.tolist()
 
-li_recom_nut_eng = ['Protein', 'Tryptophan', 'Calcium', 'Phosphorus', 'Fat', 
-                    'Linoleic acid (ω-6)', 'Sodium', 'Potassium', 'Magnesium',
-                    'Metabolisable Energy']
+li_recom_nut_eng = ['Protein', 
+                    'Tryptophan', 
+                    'Calcium', 
+                    'Phosphorus', 
+                    'Fat', 
+                    'Linoleic acid (ω-6)', 
+                    'Sodium', 
+                    'Potassium', 
+                    'Magnesium',
+                    'Metabolisable Energy'
+                   ]
 
 # Unit Conversion of the Required nutrient requirements 
 

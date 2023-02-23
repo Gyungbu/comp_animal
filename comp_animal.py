@@ -4,12 +4,16 @@ import numpy as np
 import openpyxl
 import scipy
 
+# Functions
+
 def isNumber(s):
   try:
     float(s)
     return True
   except ValueError:
     return False
+
+# Input data - Personal Information of the Companion Animal
 
 input_data = {'type' : 'cat', 'sex' : 'female', 'female_status' : 'lactation', 'week' : 100, 'body_weight' : 31, 
               'dog_breed' : '고든세터', 'dog_group' : 'Moderate activity (1 – 3 h/day) (low impact activity)', 
@@ -318,7 +322,7 @@ li_recom_nut_eng = ['Protein', 'Tryptophan', 'Calcium', 'Phosphorus', 'Fat',
                     'Linoleic acid (ω-6)', 'Sodium', 'Potassium', 'Magnesium',
                     'Metabolisable Energy']
 
-# Required nutrient requirements unit conversion
+# Unit Conversion of the Required nutrient requirements 
 
 b_ub = []
 
@@ -349,12 +353,12 @@ b_eq = [100]
 # Non-Negativity Constraints
 bounds = [(0, None)]*np_coeff.shape[1]
 
-# Linear Programmin
+# Linear Programming
 result = scipy.optimize.linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
 
 # Show the result of the pet feeding ratios
 
-print("\n<3.Result of the Pet Feeding Ratio>\n")
+print("\n<3.Result of the Pet Feeding Ratio[%]>\n")
 
 if result.success:
     for idx in range(len(result.x)):

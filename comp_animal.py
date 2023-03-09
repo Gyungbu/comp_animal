@@ -72,7 +72,7 @@ def convert_to_grams(value, unit):
 # Input data - Personal Information of the Companion Animal
 
 input_data = {'type' : 'dog', 
-              'sex' : 'male', 
+              'sex' : 'female', 
               'female_status' : 'lactation', 
               'week' : 20, 
               'body_weight' : 3, 
@@ -83,7 +83,8 @@ input_data = {'type' : 'dog',
               'weeks_after_pregnant' : 4, 
               'weeks_of_lactation' : 4, 
               'number_of_puppies' : 4, 
-              'number_of_kittens' : 4
+              'number_of_kittens' : 4,
+              'daily_feed_weight' : 0.5
              }
 
 dict_week_lactation_dog = {1:0.75, 2:0.95, 3:1.1, 4:1.2}
@@ -132,7 +133,9 @@ if input_data['type'] == 'dog':
             p = input_data['body_weight'] / expected_body_weight_dog
             BW = input_data['body_weight']
             ME = (254.1-135.0 * p) * (BW**0.75)
-      
+            if p >= 1:
+                sys.exit()
+              
         elif input_data['sex'] == 'female':
       
             # Bitches in gestation
@@ -223,7 +226,9 @@ elif input_data['type'] == 'cat':
             p = input_data['body_weight'] / expected_body_weight_cat
             BW = input_data['body_weight']
             ME = 100 * BW**0.67 * 6.7 * (np.exp(-0.189*p)-0.66)
-     
+            if p >= 1:
+                sys.exit()
+                
         elif input_data['sex'] == 'female':
       
             # Queens in gestation
@@ -454,6 +459,7 @@ try:
 except:
     print("Please check the DB_companion_animal")   
     sys.exit()
+
 ### Calculate the pet feeding ratios by using the Linear Programming Method
 
 # df_raw_material : Raw material - Nutrient information
@@ -506,6 +512,18 @@ try:
                         '에너지':'Metabolisable Energy'
                         
                        }
+    
+    #Delete nutrient without min_nutrient, max_nutrient value
+    dict_recom_nut_rev={}
+    for key, value in dict_recom_nut.items():
+        condition = (df_recom_nutrient_output.nutrient == value)
+        min_nutrient = df_recom_nutrient_output.loc[condition, 'min_nutrient'].values[0]  
+        max_nutrient = df_recom_nutrient_output.loc[condition, 'max_nutrient'].values[0] 
+        if (min_nutrient != '-') & (max_nutrient != '-'):
+            dict_recom_nut_rev[key] = value
+    dict_recom_nut = dict_recom_nut_rev    
+        
+        
     li_recom_nut_kor = list(dict_recom_nut.keys())
     li_recom_nut_eng = list(dict_recom_nut.values())
     
@@ -588,7 +606,7 @@ try:
 
     # Constraint - Feed amount
     A_eq = np.ones((1,np_coeff.shape[1])).tolist()
-    b_eq = [0.5]
+    b_eq = [ME/1600]
 
     # Non-Negativity Constraints
     bounds = []
@@ -613,17 +631,27 @@ try:
                 
                 val_ca += result.x[idx]*df_raw_material.iloc[idx]['Calcium']
                 val_p += result.x[idx]*df_raw_material.iloc[idx]['Phosphorus']
-        
-        # Print the Ca/P ratio of total feed
-        print("\n")
-        print("Ca/P ratio of total feed: ",val_ca/val_p)
     
     else:
         print("No solution for pet feeding ratios")
         sys.exit()
         
- 
- 
-except:
+    unit_conversion = {'g': 1, 'mg': 1000, 'µg': 1000000, 'kcal': 1}
+    df_recom_nutrient_output = df_recom_nutrient_output.set_index(keys=['nutrient'], inplace=False, drop=True)
+
+    df_recom_nutrient_output['feed'] = 0
+    for idx_nut, row_nut in df_recom_nutrient_output.iterrows():
+        for idx in range(len(result.x)):
+            if result.x[idx] != 0: 
+                if idx_nut in li_recom_nut_eng:
+                    unit = row_nut['unit']
+                    df_recom_nutrient_output.loc[idx_nut, 'feed'] += result.x[idx] * df_raw_material.iloc[idx][idx_nut] * unit_conversion[unit]
+
+    df_recom_nutrient_output.loc['Ca / P ratio', 'feed'] =  round(val_ca/val_p, 3)  
+    print("\n<4.Nutrient composition of feed>\n")
+    print(df_recom_nutrient_output) 
+
+
+except: 
     print("No solution for pet feeding ratios")   
-    sys.exit()
+    sys.exit()        

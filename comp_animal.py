@@ -58,7 +58,17 @@ def is_valid_input_data(input_data):
             
     return True
 
-
+# Define a function to convert nutrient values to grams
+def convert_to_grams(value, unit):
+    if unit == 'g':
+        return value
+    elif unit == 'mg':
+        return value * 0.001
+    elif unit == 'µg':
+        return value * 0.000001
+    else:
+        return value
+        
 # Input data - Personal Information of the Companion Animal
 
 input_data = {'type' : 'dog', 
@@ -509,115 +519,84 @@ try:
                                                       '최소 원료제한':'min', '최대 원료제한':'max'})
     
     
-    
-    
-    
+    df_raw_material[li_recom_nut_eng] = df_raw_material[li_recom_nut_eng].replace('-', 0)
+
+    # Change the value of df_raw_material
     for idx, row in df_raw_material.iterrows():
         for nutrient in li_recom_nut_eng:
-            if row[nutrient] == '-':
-                df_raw_material.loc[idx, nutrient] = 0
-            elif not isNumber(row[nutrient]):
-                if idx>1:
-                    if (')'  in row[nutrient]):
-                        if ('.'  in row[nutrient]):
-                            df_raw_material.loc[idx, nutrient] = float(re.findall("\d+.\d+",row[nutrient])[0])
-                    
+            if not isNumber(row[nutrient]):  # if the value is not already a number
+                if idx > 1:  # exclude the first row
+                    if ')' in row[nutrient]:
+                        if '.' in row[nutrient]:
+                            # extract decimal value with a decimal point
+                            df_raw_material.loc[idx, nutrient] = float(re.findall("\d+.\d+", row[nutrient])[0])
                         elif len(row[nutrient]) > 3:
-                            df_raw_material.loc[idx, nutrient] = float(re.findall("\d+\d+",row[nutrient])[0])
-
+                            # extract integer value with no decimal point
+                            df_raw_material.loc[idx, nutrient] = float(re.findall("\d+\d+", row[nutrient])[0])
                         else:
-                            df_raw_material.loc[idx, nutrient] = float(re.findall("\d+",row[nutrient])[0])
+                            # extract integer value with no decimal point
+                            df_raw_material.loc[idx, nutrient] = float(re.findall("\d+", row[nutrient])[0])
                     else:
+                        # set value to 0 if it doesn't contain a number or unit
                         df_raw_material.loc[idx, nutrient] = 0
             else:
+                # convert the value to float if it is already a number
                 df_raw_material.loc[idx, nutrient] = float(row[nutrient])
-    
-            df_raw_material.loc[1, nutrient]
-            
-            if idx>1:
-            
-                if df_raw_material.loc[1, nutrient] == 'g':
-                    df_raw_material.loc[idx, nutrient] *= 10
-                elif df_raw_material.loc[1, nutrient] == 'mg':
-                    df_raw_material.loc[idx, nutrient] *= 10*0.001
-                elif df_raw_material.loc[1, nutrient] == 'μg':
-                    df_raw_material.loc[idx, nutrient] *= 10*0.000001                     
-                elif df_raw_material.loc[1, nutrient] == 'kcal':
-                    df_raw_material.loc[idx, nutrient] *= 10       
-        
-        
-        if row['min'] is None:
-            df_raw_material.loc[idx, 'min'] = 0 
-        if row['max'] is None:
-            df_raw_material.loc[idx, 'max'] = 100         
-        
 
+    # Unit conversion - per 100g to per 1kg            
+    unit_multipliers = {'g': 10, 'mg': 0.01, 'μg': 0.00001, 'kcal': 10}
+
+    for idx, row in df_raw_material.iloc[1:].iterrows():
+        for nutrient in li_recom_nut_eng:
+            unit = df_raw_material.loc[1, nutrient]
+            multiplier = unit_multipliers.get(unit, 1)
+            df_raw_material.loc[idx, nutrient] *= multiplier
+
+    # Replace missing min and max values with 0 and 100 respectively
+    df_raw_material['min'].fillna(0, inplace=True)
+    df_raw_material['max'].fillna(100, inplace=True)       
+        
     df_raw_material.drop([1], axis=0, inplace=True)
 
+    # Calculate A_ub
     np_coeff = df_raw_material[li_recom_nut_eng].transpose().values
     np_coeff *= -1
     np_coeff = np.concatenate([np_coeff, -np_coeff], 0)
 
     A_ub = np_coeff.tolist()
-   
 
+    # Calculate b_ub
+    li_min = []
+    li_max = []    
 
-    # Unit Conversion of the Required nutrient requirements 
+    # Loop through each nutrient in li_recom_nut_eng
+    for nutrient in li_recom_nut_eng:
+        # Get the minimum and maximum nutrient values and units from df_recom_nutrient_output
+        condition = (df_recom_nutrient_output.nutrient == nutrient)
+        min_nutrient = df_recom_nutrient_output.loc[condition, 'min_nutrient'].values[0]
+        max_nutrient = df_recom_nutrient_output.loc[condition, 'max_nutrient'].values[0]
+        unit = df_recom_nutrient_output.loc[condition, 'unit'].values[0]
 
-    b_ub = []
+        # Convert the values to grams and append to li_min & li_max
+        li_min.append(convert_to_grams(-min_nutrient, unit))
+        li_max.append(convert_to_grams(max_nutrient, unit))
     
-    for nutrient in li_recom_nut_eng:
-        condition = (df_recom_nutrient_output.nutrient == nutrient)
-        min_nutrient = df_recom_nutrient_output[condition]['min_nutrient'].values[0]    
-        unit = df_recom_nutrient_output[condition]['unit'].values[0]    
-
-        if unit == 'g':
-            b_ub.append(min_nutrient*-1)  
-
-        elif unit == 'mg':
-            b_ub.append(min_nutrient*-0.001)  
-
-        elif unit == 'µg':
-            b_ub.append(min_nutrient*-0.000001)  
-
-        else:
-            b_ub.append(min_nutrient*-1)
-            
-    for nutrient in li_recom_nut_eng:
-        condition = (df_recom_nutrient_output.nutrient == nutrient)
-        max_nutrient = df_recom_nutrient_output[condition]['max_nutrient'].values[0]    
-        unit = df_recom_nutrient_output[condition]['unit'].values[0]    
-
-        if unit == 'g':
-            b_ub.append(max_nutrient)  
-
-        elif unit == 'mg':
-            b_ub.append(max_nutrient*0.001)  
-
-        elif unit == 'µg':
-            b_ub.append(max_nutrient*0.000001)  
-
-        else:
-            b_ub.append(max_nutrient)
+    b_ub = li_min + li_max   
             
     # Optimization - Price of the raw materials        
     c = df_raw_material['price'].values.tolist()
 
-    # Constraint - Sum of the combined ratio is equal to 1
+    # Constraint - Feed amount
     A_eq = np.ones((1,np_coeff.shape[1])).tolist()
     b_eq = [0.5]
 
     # Non-Negativity Constraints
-
     bounds = []
     for idx, row in df_raw_material[['min', 'max']].iterrows():
         bounds.append((row['min']*b_eq[0]/100,row['max']*b_eq[0]/100))
 
-   
-
     # Linear Programming
     result = scipy.optimize.linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
-    #result = scipy.optimize.linprog(A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
 
     # Show the result of the pet feeding ratios
 

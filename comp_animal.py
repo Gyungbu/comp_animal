@@ -603,15 +603,25 @@ try:
     print("\n<3.Result of the Pet Feeding Ratio[%]>\n")
     
     if result.success:
+        val_ca = 0
+        val_p = 0
         for idx in range(len(result.x)):
             if result.x[idx] != 0:
                 weight_raw = round(result.x[idx], 3)
                 ratio_raw = round(result.x[idx]/b_eq[0]*100, 3)
                 print(df_raw_material.iloc[idx]['raw_material'], weight_raw,'[kg]',ratio_raw,'[%]')
-
+                
+                val_ca += result.x[idx]*df_raw_material.iloc[idx]['Calcium']
+                val_p += result.x[idx]*df_raw_material.iloc[idx]['Phosphorus']
+        
+        # Print the Ca/P ratio of total feed
+        print("\n")
+        print("Ca/P ratio of total feed: ",val_ca/val_p)
+    
     else:
         print("No solution for pet feeding ratios")
         sys.exit()
+        
  
  
 except:
